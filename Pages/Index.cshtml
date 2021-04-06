@@ -1,0 +1,256 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Home page";
+
+}
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script>
+    var source;
+    var walls = [];
+    var isMouseDown = false;
+    function refreshPage() {
+        location.reload(true);
+    }
+    function animateShortestPath() {
+        @for (int i = 0; i < Model.shortestPath.Count-1; i++)
+        {
+            <text>
+                setTimeout(function () {
+                    var row = @Model.shortestPath[i].row;
+                    var col = @Model.shortestPath[i].col;
+                    var pathNode = "#row-" + row  + "-col-" + col;
+                    $(pathNode).addClass("path");
+                }, 50 * @i);
+            </text>
+        }
+    }
+    function allowDrop(ev) {
+        ev.preventDefault();
+    }
+    function drag(ev) {
+        source = ev.target.className;
+        ev.dataTransfer.setData("text", ev.target.id);
+    }
+    function drop(ev) {
+        ev.preventDefault();
+        var data = ev.dataTransfer.getData("text");
+        ev.target.appendChild(document.getElementById(data));
+        var node_id = ev.target.id;
+        var row;
+        var col;
+        if (node_id.charAt(5) == '-') {
+            row = node_id.slice(4, 5);
+            if (node_id.charAt(11) == null)
+                col = node_id.slice(10, 11);
+            else
+                col = node_id.slice(10, 12);
+        }
+        else {
+            row = node_id.slice(4, 6);
+            if (node_id.charAt(12) == null)
+                col = node_id.slice(11, 12);
+            else
+                col = node_id.slice(11, 13);
+        }
+        $.ajax({
+            type: "POST",
+            url: '/?handler=Starting',
+            dataType: "json",
+            contentType: "application/json; charset=utf-8",
+            beforeSend: function (xhr) {
+                xhr.setRequestHeader("XSRF-TOKEN",
+                    $('input:hidden[name="__RequestVerificationToken"]').val());
+            },
+            data: JSON.stringify({ Item1: row, Item2: col, Item3: source}),
+            success: function (data) {
+                alert(data);
+            },
+            failure: function (errMsg) {
+                alert(errMsg);
+            }
+        });
+    }
+    function mouseDown(ev) {
+        if (ev.target.className == "node") {
+            $(ev.target.id).attr('dragabble', 'false');
+            ev.target.className = "node Awall";
+            isMouseDown = true;
+            walls.push(ev.target.id);
+        }
+    }
+    function mouseOver(ev) {
+        if (isMouseDown == false)
+            return;
+        ev.target.className = "node Awall";
+        walls.push(ev.target.id);
+    }
+    function mouseUp(ev) {
+        this.className = "node";
+        isMouseDown = false;
+        var rows = [];
+        var cols = [];
+        var node_id;
+        for (let i = 0; i < walls.length; i++) {
+            node_id = walls[i];
+            if (node_id.charAt(5) == '-') {
+                rows.push(node_id.slice(4, 5));
+                if (node_id.charAt(11) == null)
+                    cols.push(node_id.slice(10, 11));
+                else
+                    cols.push(node_id.slice(10, 12));
+            }
+            else {
+                rows.push(node_id.slice(4, 6));
+                if (node_id.charAt(12) == null)
+                    cols.push(node_id.slice(11, 12));
+                else
+                    cols.push(node_id.slice(11, 13));
+            }
+        }
+        $.ajax({
+            type: "POST",
+            url: '/?handler=Walls',
+            dataType: "json",
+            contentType: "application/json; charset=utf-8",
+            beforeSend: function (xhr) {
+                xhr.setRequestHeader("XSRF-TOKEN",
+                    $('input:hidden[name="__RequestVerificationToken"]').val());
+            },
+            data: JSON.stringify({ Item4: rows, Item5: cols}),
+            success: function (data) {
+                alert(data);
+            },
+            failure: function (errMsg) {
+                alert(errMsg);
+            }
+        });
+    }
+    function randomMaze() {
+        var rows = [];
+        var cols = [];
+        for (var i = 0; i < 49; i++) {
+            for (var q = 0; q < 89; q++) {
+                var random = Math.floor((Math.random() * 3) + 1);
+                var wallNode = "#row-" + i + "-col-" + q;
+                let checkClass = document.querySelector(wallNode);
+                if (random == 1 && checkClass.className == "node") {
+                    stringRow = "" + i + "";
+                    stringCol = "" + q + "";
+                    rows.push(stringRow);
+                    cols.push(stringCol);
+                    $(wallNode).addClass("wall");
+                }
+            }
+        }
+        $.ajax({
+            type: "POST",
+            url: '/?handler=RandomWalls',
+            dataType: "json",
+            contentType: "application/json; charset=utf-8",
+            beforeSend: function (xhr) {
+                xhr.setRequestHeader("XSRF-TOKEN",
+                    $('input:hidden[name="__RequestVerificationToken"]').val());
+            },
+            data: JSON.stringify({ Item7: rows, Item8: cols }),
+            success: function (data) {
+                alert(data);
+            },
+            failure: function (errMsg) {
+                alert(errMsg);
+            }
+        });
+    }
+    $(document).ready(function () {
+        @for (int i = 1; i < Model.visitedNodes.Count-1; i++)
+        {
+            <text>
+                setTimeout(function () {
+                    var row = @Model.visitedNodes[i].row;
+                    var col = @Model.visitedNodes[i].col;
+                    var pathNode = "#row-" + row  + "-col-" + col;
+                    $(pathNode).addClass("visited");
+                }, 12 * @i);
+             if (@i == @Model.visitedNodes.Count-2) {
+                 setTimeout(function () {
+                     animateShortestPath();
+                 }, 12 *@i);
+             }
+            </text>
+        }
+    });
+</script>
+
+<div class="mode" data-theme="light">
+    <header>
+        <div class="navbar">
+            <div class="hover1">
+                <a class="rd" onclick="randomMaze()" >Random Maze</a>
+            </div>
+            <div class="center">
+                <h5 style="color: #50adaf; font-size: 0.9vw;">Path Finding Visualizer</h5>
+            </div>
+            <a class="cw" asp-page="/Index">Clear Walls</a>
+        </div>
+    </header>
+    <div class="divide20"></div>
+    <div class="text-center grid">
+        @if (Node.isAnimating == false)
+        {
+            <form method="post"><button class="button button1">Visualize</button></form>
+        }
+        else if (Node.isAnimating == true)
+        {
+            <form method="get"><button class="button button2">Start Over</button></form>
+        }
+       
+        <div class="gridM" onmouseup="mouseUp(event)">
+            @foreach (var rows in Model.Grid)
+            {
+                foreach (var nodes in rows)
+                {
+                    if (nodes.isStart == true)
+                    {
+                        <div class="node" id="row-@nodes.row-col-@nodes.col" ondrop="drop(event)" ondragover="allowDrop(event)"> <div class="start" id="start" draggable="true" ondragstart="drag(event)"></div> </div>
+                    }
+                    else if (nodes.isFinish == true)
+                    {
+                        <div class="node" id="row-@nodes.row-col-@nodes.col" ondrop="drop(event)" ondragover="allowDrop(event)"> <div class="finish" id="finish" draggable="true" ondragstart="drag(event)"></div> </div>
+                    }
+                    else if (nodes.isWall == true)
+                    {
+                        <div class="node wall" id="row-@nodes.row-col-@nodes.col" draggable="false"></div>
+                    }
+                    else if (Model.shortestPath.Contains(nodes))
+                    {
+                        <div class="node" id="row-@nodes.row-col-@nodes.col" draggable="false"></div>
+                    }
+
+                    else
+                    {
+                        <div class="node" id="row-@nodes.row-col-@nodes.col" ondrop="drop(event)" ondragover="allowDrop(event)" onmousedown="mouseDown(event)" onmouseover="mouseOver(event)" draggable="false"></div>
+
+                    }
+                }
+                <div class="divide0"></div>
+
+            }
+        </div>
+    </div>
+</div>
+<script>
+    var checkbox = document.querySelector('input[name=theme]');
+
+    checkbox.addEventListener('change', function () {
+        if (this.checked) {
+
+            document.documentElement.setAttribute('data-theme', 'dark');
+            console.log(document.documentElement.getAttribute('data-theme'));
+
+        } else {
+            document.documentElement.setAttribute('data-theme', 'light');
+            console.log(document.documentElement.getAttribute('data-theme'));
+            
+        }
+    });
+</script>

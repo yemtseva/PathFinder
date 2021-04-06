@@ -1,0 +1,44 @@
+﻿.divide0 {
+    width: 100%;
+    height: 0vh;
+}
+
+.divide2 {
+    width: 100%;
+    height: 0.2vh;
+}
+
+.divide3 {
+    width: 100%;
+    height: 0.3vh;
+}
+
+.divide5 {
+    width: 100%;
+    height: 0.5vh;
+}
+
+.divide10 {
+    width: 100%;
+    height: 1vh;
+}
+
+.divide15 {
+    width: 100%;
+    height: 1.5vh;
+}
+
+.divide20 {
+    width: 100%;
+    height: 20px;
+}
+
+.divide25 {
+    width: 100%;
+    height: 25px;
+}
+
+.divide30 {
+    width: 100%;
+    height: 30px;
+}
